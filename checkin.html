@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dagelijkse Check-in — Coach</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0f11;
+  --surface: #16181c;
+  --surface2: #1e2126;
+  --border: #2a2d34;
+  --text: #e8eaed;
+  --muted: #6b7280;
+  --accent: #f97316;
+  --accent2: #3b82f6;
+  --green: #22c55e;
+  --red: #ef4444;
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
+.shell { max-width: 680px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1.25rem; }
+header h1 { font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--accent); letter-spacing: 0.05em; text-transform: uppercase; }
+header a { font-size: 12px; color: var(--muted); font-family: var(--mono); text-decoration: none; transition: color 0.15s; }
+header a:hover { color: var(--text); }
+.date-line { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-bottom: 2rem; }
+.block { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 12px; }
+.q-label { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 10px; display: block; }
+.q-title { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 14px; }
+.slider-wrap { display: flex; align-items: center; gap: 12px; }
+.slider-wrap input[type=range] { flex: 1; accent-color: var(--accent); height: 4px; }
+.slider-ends { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.slider-val { font-family: var(--mono); font-size: 18px; font-weight: 500; color: var(--accent); min-width: 28px; text-align: right; }
+.slider-desc { font-size: 12px; color: var(--muted); margin-top: 8px; font-family: var(--mono); min-height: 16px; }
+.btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { padding: 7px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); cursor: pointer; font-size: 13px; color: var(--muted); font-family: var(--sans); transition: all 0.12s; }
+.btn:hover { border-color: var(--accent); color: var(--text); }
+.btn.active { background: rgba(249,115,22,0.12); border-color: var(--accent); color: var(--accent); font-weight: 500; }
+.btn.active-blue { background: rgba(59,130,246,0.12); border-color: var(--accent2); color: var(--accent2); font-weight: 500; }
+textarea { width: 100%; height: 80px; font-size: 13px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--text); font-family: var(--sans); resize: none; line-height: 1.5; }
+textarea::placeholder { color: var(--muted); }
+textarea:focus { outline: none; border-color: var(--accent); }
+.output-block { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; margin-top: 1.5rem; }
+.output-text { font-family: var(--mono); font-size: 11px; line-height: 1.8; color: var(--muted); white-space: pre-wrap; margin-bottom: 1rem; }
+.output-text .hl { color: var(--text); }
+.btn-generate { width: 100%; padding: 13px; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-family: var(--sans); font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 1.5rem; transition: opacity 0.15s; letter-spacing: 0.02em; }
+.btn-generate:hover { opacity: 0.88; }
+.btn-copy { width: 100%; padding: 10px; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 8px; font-family: var(--sans); font-size: 13px; cursor: pointer; transition: all 0.15s; }
+.btn-copy:hover { border-color: var(--text); color: var(--text); }
+.btn-copy.done { border-color: var(--green); color: var(--green); }
+.nav-link { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); text-decoration: none; font-family: var(--mono); }
+.nav-link:hover { color: var(--text); }
+.injury-section { border-left: 2px solid var(--red); padding-left: 1rem; }
+.injury-title { font-size: 13px; color: var(--red); font-weight: 500; margin-bottom: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.06em; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header>
+    <h1>Check-in</h1>
+    <a href="https://bertcallens02-cmyk.github.io/strava-coach/">← strava dashboard</a>
+  </header>
+
+  <div class="date-line" id="date-line"></div>
+
+  <div class="block">
+    <span class="q-label">1 — herstel</span>
+    <div class="q-title">Hoe heb je geslapen?</div>
+    <div class="slider-wrap">
+      <span class="slider-ends">slecht</span>
+      <input type="range" min="1" max="5" step="1" value="3" id="sleep" oninput="updateSlider('sleep')">
+      <span class="slider-ends">uitstekend</span>
+      <span class="slider-val" id="sleep-val">3</span>
+    </div>
+    <div class="slider-desc" id="sleep-desc">ok</div>
+  </div>
+
+  <div class="block">
+    <span class="q-label">2 — energie</span>
+    <div class="q-title">Hoe voel je je nu?</div>
+    <div class="slider-wrap">
+      <span class="slider-ends">uitgeput</span>
+      <input type="range" min="1" max="5" step="1" value="3" id="fatigue" oninput="updateSlider('fatigue')">
+      <span class="slider-ends">fris</span>
+      <span class="slider-val" id="fatigue-val">3</span>
+    </div>
+    <div class="slider-desc" id="fatigue-desc">matig</div>
+  </div>
+
+  <div class="block">
+    <span class="q-label">3 — lichaam</span>
+    <div class="q-title">Spierpijn of spanning ergens?</div>
+    <div class="slider-wrap">
+      <span class="slider-ends">geen</span>
+      <input type="range" min="1" max="5" step="1" value="1" id="soreness" oninput="updateSlider('soreness')">
+      <span class="slider-ends">hevig</span>
+      <span class="slider-val" id="soreness-val">1</span>
+    </div>
+    <div class="slider-desc" id="soreness-desc">geen pijn</div>
+  </div>
+
+  <div class="block">
+    <span class="q-label">4 — blessure</span>
+    <div class="injury-section">
+      <div class="injury-title">Kuit (links)</div>
+      <div class="btn-group" id="calf-group">
+        <button class="btn" onclick="selectOne('calf-group', this, 'pijnvrij')">pijnvrij</button>
+        <button class="btn" onclick="selectOne('calf-group', this, 'licht ongemak')">licht ongemak</button>
+        <button class="btn" onclick="selectOne('calf-group', this, 'duidelijke pijn')">duidelijke pijn</button>
+        <button class="btn" onclick="selectOne('calf-group', this, 'erger dan gisteren')">erger dan gisteren</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="block">
+    <span class="q-label">5 — hoofd</span>
+    <div class="q-title">Motivatie & mentale staat</div>
+    <div class="btn-group" id="mood-group">
+      <button class="btn" onclick="selectOne('mood-group', this, 'top')">top</button>
+      <button class="btn" onclick="selectOne('mood-group', this, 'goed')">goed</button>
+      <button class="btn" onclick="selectOne('mood-group', this, 'neutraal')">neutraal</button>
+      <button class="btn" onclick="selectOne('mood-group', this, 'matig')">matig</button>
+      <button class="btn" onclick="selectOne('mood-group', this, 'slecht')">slecht</button>
+    </div>
+  </div>
+
+  <div class="block">
+    <span class="q-label">6 — planning</span>
+    <div class="q-title">Wat staat er vandaag gepland?</div>
+    <div class="btn-group" id="plan-group">
+      <button class="btn" onclick="selectMulti('plan-group', this, 'lopen')">lopen</button>
+      <button class="btn" onclick="selectMulti('plan-group', this, 'fietsen')">fietsen</button>
+      <button class="btn" onclick="selectMulti('plan-group', this, 'zwift')">zwift</button>
+      <button class="btn" onclick="selectMulti('plan-group', this, 'core / pilates')">core / pilates</button>
+      <button class="btn" onclick="selectMulti('plan-group', this, 'rust')">rust</button>
+      <button class="btn" onclick="selectMulti('plan-group', this, 'andere sport')">andere sport</button>
+    </div>
+  </div>
+
+  <div class="block">
+    <span class="q-label">7 — context</span>
+    <div class="q-title">Extra info voor de coach <span style="font-size:12px;color:var(--muted);font-weight:400">(optioneel)</span></div>
+    <textarea id="notes" placeholder="Bijv. drukke werkdag, slecht geslapen door warmte, knie voelt stijf aan..."></textarea>
+  </div>
+
+  <button class="btn-generate" onclick="generate()">Genereer check-in voor coach</button>
+
+  <div class="output-block" id="output-block" style="display:none">
+    <div class="output-text" id="output-text"></div>
+    <button class="btn-copy" id="copy-btn" onclick="copyText()">Kopieer naar klembord</button>
+  </div>
+
+</div>
+
+<script>
+const sliderLabels = {
+  sleep:    ['','slecht','matig','ok','goed','uitstekend'],
+  fatigue:  ['','uitgeput','moe','matig','fris','heel fris'],
+  soreness: ['','geen pijn','licht','merkbaar','hevig','zeer hevig']
+};
+
+document.getElementById('date-line').textContent =
+  new Date().toLocaleDateString('nl-BE', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+
+function updateSlider(id) {
+  const val = parseInt(document.getElementById(id).value);
+  document.getElementById(id + '-val').textContent = val;
+  document.getElementById(id + '-desc').textContent = sliderLabels[id][val];
+}
+
+updateSlider('sleep');
+updateSlider('fatigue');
+updateSlider('soreness');
+
+function selectOne(groupId, btn, val) {
+  document.querySelectorAll('#' + groupId + ' .btn').forEach(b => {
+    b.classList.remove('active');
+  });
+  btn.classList.add('active');
+}
+
+function selectMulti(groupId, btn, val) {
+  btn.classList.toggle('active');
+}
+
+function getVal(id) { return parseInt(document.getElementById(id).value); }
+function getSelected(groupId) {
+  return [...document.querySelectorAll('#' + groupId + ' .btn.active')].map(b => b.textContent.trim());
+}
+
+function generate() {
+  const sleep    = getVal('sleep');
+  const fatigue  = getVal('fatigue');
+  const soreness = getVal('soreness');
+  const calf     = getSelected('calf-group')[0] || '—';
+  const mood     = getSelected('mood-group')[0] || '—';
+  const plan     = getSelected('plan-group');
+  const notes    = document.getElementById('notes').value.trim();
+
+  const d = new Date().toLocaleDateString('nl-BE', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+
+  const lines = [
+    '--- DAGELIJKSE CHECK-IN ---',
+    'Datum:         ' + d,
+    '',
+    'Slaap:         ' + sleep + '/5  (' + sliderLabels.sleep[sleep] + ')',
+    'Energie:       ' + fatigue + '/5  (' + sliderLabels.fatigue[fatigue] + ')',
+    'Spierpijn:     ' + soreness + '/5  (' + sliderLabels.soreness[soreness] + ')',
+    'Kuit:          ' + calf,
+    'Motivatie:     ' + mood,
+    'Plan vandaag:  ' + (plan.length ? plan.join(', ') : 'niets gepland'),
+    notes ? 'Opmerkingen:   ' + notes : '',
+    '---------------------------'
+  ].filter(l => l !== '');
+
+  const text = lines.join('\n');
+  document.getElementById('output-text').textContent = text;
+  document.getElementById('output-block').style.display = 'block';
+  document.getElementById('copy-btn').textContent = 'Kopieer naar klembord';
+  document.getElementById('copy-btn').classList.remove('done');
+  document.getElementById('output-block').scrollIntoView({behavior: 'smooth', block: 'nearest'});
+  window._checkinText = text;
+}
+
+function copyText() {
+  const text = window._checkinText || document.getElementById('output-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ Gekopieerd — plak nu in Claude';
+    btn.classList.add('done');
+  });
+}
+</script>
+</body>
+</html>
