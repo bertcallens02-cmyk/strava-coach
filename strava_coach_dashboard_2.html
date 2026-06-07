@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coach Dashboard — Strava</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0f11;
+  --surface: #16181c;
+  --surface2: #1e2126;
+  --border: #2a2d34;
+  --text: #e8eaed;
+  --muted: #6b7280;
+  --accent: #f97316;
+  --accent2: #3b82f6;
+  --green: #22c55e;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
+.shell { max-width: 780px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+header { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1.25rem; }
+header h1 { font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--accent); letter-spacing: 0.05em; text-transform: uppercase; }
+header span { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+.connect-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; text-align: center; }
+.connect-card p { color: var(--muted); margin-bottom: 1.5rem; line-height: 1.6; }
+.btn-strava { display: inline-flex; align-items: center; gap: 10px; background: #fc4c02; color: #fff; border: none; border-radius: 8px; padding: 12px 24px; font-family: var(--sans); font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; transition: opacity 0.15s; }
+.btn-strava:hover { opacity: 0.88; }
+.btn-strava svg { width: 20px; height: 20px; }
+.btn-secondary { display: inline-flex; align-items: center; gap: 8px; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 8px; padding: 9px 18px; font-family: var(--sans); font-size: 13px; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+.btn-secondary:hover { border-color: var(--text); color: var(--text); }
+.section { margin-bottom: 2rem; }
+.section-title { font-family: var(--mono); font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 1rem; }
+.athlete-row { display: flex; align-items: center; gap: 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+.avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); object-fit: cover; }
+.athlete-name { font-weight: 500; font-size: 15px; }
+.athlete-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); margin-left: auto; flex-shrink: 0; box-shadow: 0 0 6px var(--green); }
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; }
+.stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.stat-value { font-family: var(--mono); font-size: 22px; font-weight: 500; }
+.stat-unit { font-size: 12px; color: var(--muted); margin-left: 3px; }
+.activity-list { display: flex; flex-direction: column; gap: 8px; }
+.activity-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
+.activity-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.icon-run { background: rgba(249,115,22,0.12); }
+.icon-ride { background: rgba(59,130,246,0.12); }
+.icon-other { background: rgba(107,114,128,0.12); }
+.activity-name { font-weight: 500; font-size: 13px; margin-bottom: 3px; }
+.activity-date { font-size: 11px; color: var(--muted); }
+.activity-metrics { text-align: right; font-family: var(--mono); font-size: 12px; color: var(--muted); line-height: 1.7; }
+.activity-metrics strong { color: var(--text); font-weight: 500; }
+.tag { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 4px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 3px; }
+.tag-run { background: rgba(249,115,22,0.15); color: var(--accent); }
+.tag-ride { background: rgba(59,130,246,0.15); color: var(--accent2); }
+.tag-other { background: rgba(107,114,128,0.15); color: var(--muted); }
+.copy-section { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; }
+.copy-output { font-family: var(--mono); font-size: 11px; line-height: 1.7; color: var(--muted); white-space: pre-wrap; margin-bottom: 1rem; max-height: 260px; overflow-y: auto; }
+.copy-row { display: flex; gap: 10px; }
+.btn-copy { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 9px 20px; font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; }
+.btn-copy:hover { opacity: 0.85; }
+.loading { text-align: center; padding: 3rem; color: var(--muted); font-family: var(--mono); font-size: 13px; }
+.error-box { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-radius: 10px; padding: 1rem 1.25rem; color: var(--red); font-size: 13px; line-height: 1.6; }
+.hidden { display: none !important; }
+.hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+.top-actions { display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 1.5rem; }
+.info-box { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2); border-radius: 10px; padding: 1rem 1.25rem; color: #93c5fd; font-size: 13px; line-height: 1.6; margin-bottom: 1.5rem; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <h1>Coach Dashboard</h1>
+    <span>Strava · Bert</span>
+  </header>
+
+  <div id="screen-connect">
+    <div class="connect-card">
+      <p>Verbind je Strava account om je recente activiteiten te laden.<br>De app werkt volledig lokaal in je browser — er worden geen gegevens opgeslagen op een server.</p>
+      <a id="btn-auth" class="btn-strava" href="#">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+        Verbinden met Strava
+      </a>
+    </div>
+  </div>
+
+  <div id="screen-loading" class="hidden">
+    <div class="loading">activiteiten laden...</div>
+  </div>
+
+  <div id="screen-error" class="hidden">
+    <div class="error-box" id="error-msg"></div>
+    <br>
+    <button class="btn-secondary" onclick="resetApp()">← opnieuw proberen</button>
+  </div>
+
+  <div id="screen-dashboard" class="hidden">
+    <div class="top-actions">
+      <button class="btn-secondary" onclick="refreshData()">↺ vernieuwen</button>
+      <button class="btn-secondary" onclick="resetApp()">↩ uitloggen</button>
+    </div>
+    <div class="athlete-row">
+      <img class="avatar" id="athlete-avatar" src="" alt="">
+      <div>
+        <div class="athlete-name" id="athlete-name"></div>
+        <div class="athlete-meta" id="athlete-meta"></div>
+      </div>
+      <div class="status-dot" title="verbonden"></div>
+    </div>
+    <div class="section">
+      <div class="section-title">Afgelopen 4 weken</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">loop km</div>
+          <div class="stat-value" id="stat-run-km">—<span class="stat-unit">km</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">fiets km</div>
+          <div class="stat-value" id="stat-ride-km">—<span class="stat-unit">km</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">activiteiten</div>
+          <div class="stat-value" id="stat-count">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Laatste 10 activiteiten</div>
+      <div class="activity-list" id="activity-list"></div>
+    </div>
+    <div class="hr"></div>
+    <div class="section">
+      <div class="section-title">Coach samenvatting — kopieer naar gesprek</div>
+      <div class="copy-section">
+        <div class="copy-output" id="copy-output"></div>
+        <div class="copy-row">
+          <button class="btn-copy" onclick="copyToClipboard()">Kopieer voor coach</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CLIENT_ID = '256181';
+const CLIENT_SECRET = 'bd6ae1b5e5db6fe344b7a501aec3636a1865a6f9';
+// The gerych callback page will redirect back to this file with the code in the URL hash
+const REDIRECT_URI = 'https://gerych.github.io/strava-callback/';
+const TOKEN_KEY = 'strava_token_v2';
+
+function getToken() { try { return JSON.parse(localStorage.getItem(TOKEN_KEY)); } catch(e) { return null; } }
+function saveToken(t) { localStorage.setItem(TOKEN_KEY, JSON.stringify(t)); }
+function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+
+function show(id) {
+  ['screen-connect','screen-loading','screen-error','screen-dashboard'].forEach(s => {
+    document.getElementById(s).classList.add('hidden');
+  });
+  document.getElementById(id).classList.remove('hidden');
+}
+function showError(msg) { document.getElementById('error-msg').innerHTML = msg; show('screen-error'); }
+function resetApp() { clearToken(); window.location.hash = ''; show('screen-connect'); }
+
+function buildAuthUrl() {
+  const p = new URLSearchParams({
+    client_id: CLIENT_ID,
+    redirect_uri: REDIRECT_URI,
+    response_type: 'code',
+    approval_prompt: 'auto',
+    scope: 'read,activity:read'
+  });
+  return 'https://www.strava.com/oauth/authorize?' + p.toString();
+}
+document.getElementById('btn-auth').href = buildAuthUrl();
+
+async function exchangeCode(code) {
+  const res = await fetch('https://www.strava.com/oauth/token', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ client_id: CLIENT_ID, client_secret: CLIENT_SECRET, code, grant_type: 'authorization_code' })
+  });
+  if (!res.ok) { const t = await res.text(); throw new Error('Token exchange mislukt: ' + t); }
+  return res.json();
+}
+
+async function doRefreshToken(refresh_token) {
+  const res = await fetch('https://www.strava.com/oauth/token', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ client_id: CLIENT_ID, client_secret: CLIENT_SECRET, refresh_token, grant_type: 'refresh_token' })
+  });
+  if (!res.ok) throw new Error('Token refresh mislukt');
+  return res.json();
+}
+
+async function getAccessToken() {
+  let token = getToken();
+  if (!token) throw new Error('Niet ingelogd');
+  if (Date.now() / 1000 > token.expires_at - 300) {
+    const fresh = await doRefreshToken(token.refresh_token);
+    token = { ...token, ...fresh };
+    saveToken(token);
+  }
+  return token.access_token;
+}
+
+async function fetchAthlete(at) {
+  const res = await fetch('https://www.strava.com/api/v3/athlete', { headers: { Authorization: 'Bearer ' + at } });
+  if (!res.ok) throw new Error('Athlete ophalen mislukt');
+  return res.json();
+}
+
+async function fetchActivities(at) {
+  let all = [];
+  for (let p = 1; p <= 2; p++) {
+    const res = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=30&page=${p}`, { headers: { Authorization: 'Bearer ' + at } });
+    if (!res.ok) break;
+    const data = await res.json();
+    all = all.concat(data);
+    if (data.length < 30) break;
+  }
+  return all;
+}
+
+function formatDist(m) { return (m / 1000).toFixed(1); }
+function formatTime(s) { const h = Math.floor(s/3600), m = Math.floor((s%3600)/60); return h > 0 ? `${h}u${String(m).padStart(2,'0')}` : `${m}min`; }
+function formatPace(s_per_m) { const spk = s_per_m * 1000, m = Math.floor(spk/60), s = Math.round(spk%60); return `${m}:${String(s).padStart(2,'0')}/km`; }
+function formatSpeed(mps) { return (mps * 3.6).toFixed(1) + 'km/h'; }
+function formatDate(iso) { return new Date(iso).toLocaleDateString('nl-BE', {weekday:'short',day:'numeric',month:'short'}); }
+
+function activityIcon(type) {
+  if (['Run','TrailRun'].includes(type)) return {cls:'icon-run', e:'🏃'};
+  if (['Ride','VirtualRide','GravelRide','MountainBikeRide','EBikeRide'].includes(type)) return {cls:'icon-ride', e:'🚴'};
+  return {cls:'icon-other', e:'⚡'};
+}
+function activityTag(type) {
+  if (['Run','TrailRun'].includes(type)) return '<span class="tag tag-run">lopen</span>';
+  if (['Ride','VirtualRide','GravelRide','MountainBikeRide','EBikeRide'].includes(type)) return '<span class="tag tag-ride">fietsen</span>';
+  return `<span class="tag tag-other">${type.toLowerCase()}</span>`;
+}
+
+function renderDashboard(athlete, activities) {
+  document.getElementById('athlete-avatar').src = athlete.profile_medium || athlete.profile || '';
+  document.getElementById('athlete-name').textContent = athlete.firstname + ' ' + athlete.lastname;
+  document.getElementById('athlete-meta').textContent = [athlete.city, athlete.country].filter(Boolean).join(', ');
+
+  const cutoff = Date.now() - 28 * 86400 * 1000;
+  const recent = activities.filter(a => new Date(a.start_date).getTime() > cutoff);
+  const runKm = recent.filter(a => ['Run','TrailRun'].includes(a.type)).reduce((s,a) => s + a.distance, 0);
+  const rideKm = recent.filter(a => ['Ride','VirtualRide','GravelRide','MountainBikeRide','EBikeRide'].includes(a.type)).reduce((s,a) => s + a.distance, 0);
+
+  document.getElementById('stat-run-km').innerHTML = Math.round(runKm/1000) + '<span class="stat-unit">km</span>';
+  document.getElementById('stat-ride-km').innerHTML = Math.round(rideKm/1000) + '<span class="stat-unit">km</span>';
+  document.getElementById('stat-count').textContent = recent.length;
+
+  const last10 = activities.slice(0, 10);
+  document.getElementById('activity-list').innerHTML = last10.map(a => {
+    const icon = activityIcon(a.type);
+    const isRun = ['Run','TrailRun'].includes(a.type);
+    const speedStr = a.average_speed > 0 ? (isRun ? formatPace(a.average_speed) : formatSpeed(a.average_speed)) : '—';
+    const hrStr = a.average_heartrate ? Math.round(a.average_heartrate) + ' bpm' : '—';
+    const elevStr = a.total_elevation_gain > 10 ? '+' + Math.round(a.total_elevation_gain) + 'm' : '';
+    return `<div class="activity-item">
+      <div class="activity-icon ${icon.cls}">${icon.e}</div>
+      <div>
+        <div class="activity-name">${a.name}</div>
+        <div class="activity-date">${formatDate(a.start_date_local)}</div>
+        ${activityTag(a.type)}
+      </div>
+      <div class="activity-metrics">
+        <strong>${formatDist(a.distance)} km</strong><br>
+        ${formatTime(a.moving_time)}<br>
+        ${speedStr}<br>
+        ${hrStr}${elevStr ? ' · ' + elevStr : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  const lines = [
+    '--- STRAVA SAMENVATTING ---',
+    'Gegenereerd: ' + new Date().toLocaleDateString('nl-BE',{weekday:'long',year:'numeric',month:'long',day:'numeric'}),
+    '',
+    'AFGELOPEN 28 DAGEN',
+    `  Lopen:    ${Math.round(runKm/1000)} km`,
+    `  Fietsen:  ${Math.round(rideKm/1000)} km`,
+    `  Totaal:   ${recent.length} activiteiten`,
+    '',
+    'LAATSTE 10 ACTIVITEITEN',
+    ...last10.map(a => {
+      const isRun = ['Run','TrailRun'].includes(a.type);
+      const speedStr = a.average_speed > 0 ? (isRun ? formatPace(a.average_speed) : formatSpeed(a.average_speed)) : '';
+      const hrStr = a.average_heartrate ? ' · ' + Math.round(a.average_heartrate) + ' bpm' : '';
+      const elevStr = a.total_elevation_gain > 10 ? ' · +' + Math.round(a.total_elevation_gain) + 'm' : '';
+      return `  ${formatDate(a.start_date_local).padEnd(14)} [${a.type.padEnd(14)}] ${formatDist(a.distance).padStart(5)} km  ${formatTime(a.moving_time).padStart(6)}  ${speedStr}${hrStr}${elevStr}`;
+    }),
+    '---------------------------'
+  ];
+  document.getElementById('copy-output').textContent = lines.join('\n');
+  show('screen-dashboard');
+}
+
+async function refreshData() {
+  show('screen-loading');
+  try {
+    const at = await getAccessToken();
+    const [athlete, activities] = await Promise.all([fetchAthlete(at), fetchActivities(at)]);
+    renderDashboard(athlete, activities);
+  } catch(e) { showError('Fout bij laden: ' + e.message); }
+}
+
+function copyToClipboard() {
+  const text = document.getElementById('copy-output').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.btn-copy');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Gekopieerd!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  });
+}
+
+// Parse code from URL hash (gerych callback puts it there)
+// Also handle direct query string as fallback
+async function boot() {
+  // gerych.github.io/strava-callback redirects back as:
+  // yourfile.html#code=XXX&scope=YYY
+  // OR as query string depending on browser/version
+  let code = null;
+  let error = null;
+
+  // Check hash first
+  if (window.location.hash) {
+    const hashParams = new URLSearchParams(window.location.hash.slice(1));
+    code = hashParams.get('code');
+    error = hashParams.get('error');
+  }
+  // Fallback: check query string
+  if (!code && !error) {
+    const qp = new URLSearchParams(window.location.search);
+    code = qp.get('code');
+    error = qp.get('error');
+  }
+
+  if (error) {
+    window.history.replaceState({}, '', window.location.pathname);
+    showError('Strava verbinding geweigerd: ' + error);
+    return;
+  }
+
+  if (code) {
+    window.history.replaceState({}, '', window.location.pathname);
+    show('screen-loading');
+    try {
+      const tokenData = await exchangeCode(code);
+      saveToken(tokenData);
+      const [athlete, activities] = await Promise.all([fetchAthlete(tokenData.access_token), fetchActivities(tokenData.access_token)]);
+      renderDashboard(athlete, activities);
+    } catch(e) {
+      showError('Verbinding mislukt: ' + e.message + '<br><br>Probeer opnieuw via de knop hieronder.');
+    }
+    return;
+  }
+
+  const token = getToken();
+  if (token) {
+    show('screen-loading');
+    try {
+      const at = await getAccessToken();
+      const [athlete, activities] = await Promise.all([fetchAthlete(at), fetchActivities(at)]);
+      renderDashboard(athlete, activities);
+    } catch(e) { clearToken(); show('screen-connect'); }
+    return;
+  }
+
+  show('screen-connect');
+}
+
+boot();
+</script>
+</body>
+</html>
